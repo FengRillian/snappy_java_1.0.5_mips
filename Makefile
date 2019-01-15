@@ -1,7 +1,7 @@
 
 include Makefile.common
 
-MVN:=mvn
+MVN:=xmvn -o
 
 all: snappy
 
@@ -10,21 +10,21 @@ SNAPPY_ARCHIVE:=$(TARGET)/snappy-$(VERSION).tar.gz
 SNAPPY_CC:=snappy-sinksource.cc snappy-stubs-internal.cc snappy.cc
 SNAPPY_SRC_DIR:=$(TARGET)/snappy-$(VERSION)
 SNAPPY_SRC:=$(addprefix $(SNAPPY_SRC_DIR)/,$(SNAPPY_CC))
-SNAPPY_OBJ:=$(addprefix $(SNAPPY_OUT)/,$(patsubst %.cc,%.o,$(SNAPPY_CC)) SnappyNative.o)
+SNAPPY_OBJ:=$(addprefix $(SNAPPY_OUT)/, SnappyNative.o)
 
 SNAPPY_UNPACKED:=$(TARGET)/snappy-extracted.log
 
-CXXFLAGS:=$(CXXFLAGS) -I$(SNAPPY_SRC_DIR)
+CXXFLAGS:=$(CXXFLAGS) -I$(SNAPPY_SRC_DIR) -lsnappy
 
 $(SNAPPY_ARCHIVE):
 	@mkdir -p $(@D)
-	curl -o$@ http://snappy.googlecode.com/files/snappy-$(VERSION).tar.gz
+	#curl -o$@ http://snappy.googlecode.com/files/snappy-$(VERSION).tar.gz
 
 $(SNAPPY_UNPACKED): $(SNAPPY_ARCHIVE)
-	tar xvfz $< -C $(TARGET)	
-	touch $@
+	#tar xvfz $< -C $(TARGET)	
+	#touch $@
 
-jni-header: $(SRC)/org/xerial/snappy/SnappyNative.h
+#jni-header: $(SRC)/org/xerial/snappy/SnappyNative.h
 
 
 $(SRC)/org/xerial/snappy/SnappyNative.h: $(SRC)/org/xerial/snappy/SnappyNative.java
@@ -42,7 +42,7 @@ $(SNAPPY_SRC): $(SNAPPY_UNPACKED)
 
 $(SNAPPY_OUT)/%.o : $(SNAPPY_SRC_DIR)/%.cc
 	@mkdir -p $(@D)
-	$(CXX) $(CXXFLAGS) -c $< -o $@ 
+	#$(CXX) $(CXXFLAGS) -c $< -o $@ 
 
 $(SNAPPY_OUT)/SnappyNative.o : $(SRC)/org/xerial/snappy/SnappyNative.cpp $(SRC)/org/xerial/snappy/SnappyNative.h  
 	@mkdir -p $(@D)
@@ -63,7 +63,8 @@ NATIVE_DIR:=src/main/resources/org/xerial/snappy/native/$(OS_NAME)/$(OS_ARCH)
 NATIVE_TARGET_DIR:=$(TARGET)/classes/org/xerial/snappy/native/$(OS_NAME)/$(OS_ARCH)
 NATIVE_DLL:=$(NATIVE_DIR)/$(LIBNAME)
 
-snappy-jar-version:=snappy-java-$(shell $(JAVA) -jar lib/silk-weaver.jar find 'project(artifactId, version)' pom.xml | grep snappy-java | awk '{ print $$2; }')
+#snappy-jar-version:=snappy-java-$(shell $(JAVA) -jar lib/silk-weaver.jar find 'project(artifactId, version)' pom.xml | grep snappy-java | awk '{ print $$2; }')
+snappy-jar-version:=snappy-java-1.0.5
 
 native: $(SNAPPY_UNPACKED) $(NATIVE_DLL) 
 snappy: native $(TARGET)/$(snappy-jar-version).jar
@@ -76,7 +77,7 @@ $(NATIVE_DLL): $(SNAPPY_OUT)/$(LIBNAME)
 
 
 $(TARGET)/$(snappy-jar-version).jar: native $(NATIVE_DLL)
-	$(MVN) package -Dmaven.test.skip=true
+	#$(MVN) package -Dmaven.test.skip=true
 
 test: $(NATIVE_DLL)
 	$(MVN) test
@@ -90,6 +91,9 @@ win64:
 
 mac32: 
 	$(MAKE) native OS_NAME=Mac OS_ARCH=i386
+
+linux64:
+	$(MAKE) native OS_NAME=Linux OS_ARCH=mips64
 
 linux32:
 	$(MAKE) native OS_NAME=Linux OS_ARCH=i386
